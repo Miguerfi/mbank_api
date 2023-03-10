@@ -7,6 +7,8 @@ name = "pypi"
 django = "*"
 djangorestframework = "*"
 black-macchiato = "*"
+django-stubs = "*"
+djangorestframework-stubs = "*"
 
 [dev-packages]
 

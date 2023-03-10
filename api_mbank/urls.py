@@ -15,7 +15,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-
+from account.api.viewsets.viewsets import AccountViewSet
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("createaccount/",AccountViewSet.as_view({'post':'create'})),
+    path("login/",AccountViewSet.as_view({'post':'login'}))
 ]
