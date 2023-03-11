@@ -1,3 +1,4 @@
+from datetime import datetime
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 import account
@@ -36,20 +37,21 @@ class AccountViewSet(ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         account = Account()
-        account.full_name = request.data["full_name"]
-        account.cpf = request.data["cpf"]
-        account.nick = request.data["nick"]
-        account.birthdate = request.data["birth_date"]
+        account.full_name = request.data['full_name']
+        account.cpf = request.data['cpf']
+        account.nick = request.data['nick']
         account.password = request.data['password']
+        account.birthdate = request.data['birthdate']
+        account.last_login = datetime.now()
+        account.date_joined = datetime.now()
         account.save()
-        return Response(status=status.HTTP_201_CREATED)
+        response_content = "Account Created"
+        return Response(response_content,status=status.HTTP_201_CREATED)
 
-    @action(methods=['get'],detail=False)
+    @action(methods=['post'],detail=False)
     def login(self,request,*args,**kwargs):
-        account = Account()
         cpf = request.data['cpf']
         password = request.data['password']
-        cpf_auth = authenticate(request, cpf=cpf, password=password)
-        if cpf_auth is not None:
-            login(request, cpf_auth)
-            return Response(status=status.HTTP_201_CREATED)
+        auth = Account.objects.get(cpf=cpf,password=password)
+        print(auth)
+        return Response("OK")
