@@ -1,4 +1,7 @@
 from datetime import datetime
+from django.http import JsonResponse
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 import account
@@ -9,10 +12,12 @@ from rest_framework import status
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.contrib import messages
+import json
 
 class AccountViewSet(ModelViewSet):
     queryset = Account.objects.all()
     serializer = AccountSerializer
+    authentication_classes = [TokenAuthentication]
 
     def list(self, request, *args, **kwargs):
         queryset = self.queryset
@@ -36,22 +41,45 @@ class AccountViewSet(ModelViewSet):
         return Response("deleted")
 
     def create(self, request, *args, **kwargs):
-        account = Account()
-        account.full_name = request.data['full_name']
-        account.cpf = request.data['cpf']
-        account.nick = request.data['nick']
-        account.password = request.data['password']
-        account.birthdate = request.data['birthdate']
-        account.last_login = datetime.now()
-        account.date_joined = datetime.now()
-        account.save()
-        response_content = "Account Created"
-        return Response(response_content,status=status.HTTP_201_CREATED)
+        user = Account()
+        user.full_name = request.data["full_name"]
+        user.nick = request.data["nick"]
+        user.password = request.data["password"]
+        user.email = request.data["email"]
+        user.cpf = request.data["cpf"]
+        print("aqui")
+        user.birthdate = request.data["birthdate"]
+        user.save()
+        user = Account.objects.get(nick=request.data["nick"])
 
-    @action(methods=['post'],detail=False)
-    def login(self,request,*args,**kwargs):
-        cpf = request.data['cpf']
-        password = request.data['password']
-        auth = Account.objects.get(cpf=cpf,password=password)
+        token = Token.objects.create(user=user)
+        token_key = token.key
+        token.user = user
+        token.save()
+
+        obj_token = {
+                'token':token_key
+                }
+        return Response(obj_token, status=status.HTTP_201_CREATED)
+
+    @action(methods=["post"], detail=False)
+    def login(self, request, *args, **kwargs):
+        cpf = request.data["cpf"]
+        password = request.data["password"]
+        auth = Account.objects.get(cpf=cpf, password=password)
         print(auth)
-        return Response("OK")
+
+        response_content = {
+                "Succes":"Logged"
+                }
+        return Response(response_content,status=status.HTTP_200_OK)
+
+    @action(methods=["get"],detail=False)
+    def saldo(self, request,*args,**kwargs):
+        saldo = request.user.saldo
+        return JsonResponse({'saldo':saldo})
+
+    @action(methods=["get"],detail=False)
+    def me(self,request,*args,**kwargs):
+        nick = request.user.nick
+        return JsonResponse({'nick':nick})

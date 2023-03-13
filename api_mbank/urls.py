@@ -19,5 +19,7 @@ from account.api.viewsets.viewsets import AccountViewSet
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("createaccount/",AccountViewSet.as_view({'post':'create'})),
-    path("login/",AccountViewSet.as_view({'post':'login'}))
+    path("login/",AccountViewSet.as_view({'post':'login'})),
+    path('saldo/',AccountViewSet.as_view({'get':'saldo'})),
+    path('me/',AccountViewSet.as_view({'get':'me'}))
 ]
