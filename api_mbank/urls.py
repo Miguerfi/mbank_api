@@ -21,5 +21,7 @@ urlpatterns = [
     path("createaccount/",AccountViewSet.as_view({'post':'create'})),
     path("login/",AccountViewSet.as_view({'post':'login'})),
     path('saldo/',AccountViewSet.as_view({'get':'saldo'})),
-    path('me/',AccountViewSet.as_view({'get':'me'}))
+    path('me/',AccountViewSet.as_view({'get':'me'})),
+    path('create_card/',AccountViewSet.as_view({'post':'create_card'})),
+    path('get_card_infos',AccountViewSet.as_view({'get':'get_card_infos'}))
 ]

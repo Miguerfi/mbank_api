@@ -40,13 +40,12 @@ class AccountManager(BaseUserManager):
 class Account(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     full_name = models.CharField(max_length=60, null=True, blank=True)
-    cpf =  models.CharField(max_length=11,null=True,blank=True)
+    cpf = models.CharField(max_length=11, null=True, blank=True)
     nick = models.CharField(max_length=15)
     birthdate = models.DateField(null=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
-    saldo = models.IntegerField(default=0)
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["full_name", "nick", "birthdate"]
 
@@ -62,8 +61,15 @@ class Account(AbstractBaseUser, PermissionsMixin):
         return self.nick
 
 
+class Balance(models.Model):
+    cpf = models.ForeignKey(Account, null=True, blank=True, on_delete=models.CASCADE)
+    saldo = models.IntegerField(default=0, blank=True, null=True)
+    saved_money = models.IntegerField(default=0, blank=True, null=True)
+    money_applied = models.IntegerField(default=0, blank=True, null=True)
+
+
 class Card(models.Model):
-    card = models.IntegerField(blank=True, null=False)
+    card = models.IntegerField(blank=True, null=True)
     cvv = models.IntegerField(null=True, blank=True)
     exp_data = models.DateField(null=True, blank=True)
-    cpf = models.ForeignKey(Account, on_delete=models.CASCADE)
+    cpf = models.ForeignKey(Account, blank=True, null=True, on_delete=models.CASCADE)

@@ -5,4 +5,4 @@ from account.models import Card
 class CardSerializer(ModelSerializer):
     class Meta:
         model = Card
-        fields = ("card", "cvv", "exp_data", "cpf")
+        fields = "__all__"
