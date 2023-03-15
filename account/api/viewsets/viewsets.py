@@ -138,3 +138,4 @@ class AccountViewSet(ModelViewSet):
         data = json.loads(json_obj)
 
         return Response(data, content_type="application/json")
+
