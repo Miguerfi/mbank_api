@@ -1,19 +1,14 @@
 from datetime import datetime
 from django.http import JsonResponse
-from django.views.generic import detail
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-import account
 from account.api.viewsets.serializers.account_serializer import AccountSerializer
 from account.api.viewsets.serializers.card_serializer import CardSerializer
 from account.models import Account, Balance, Card
 from rest_framework.decorators import action
 from rest_framework import status
-from django.contrib.auth import authenticate, login
-from django.shortcuts import render, redirect
-from django.contrib import messages
 import json
 import random
 import datetime
@@ -88,9 +83,9 @@ class AccountViewSet(ModelViewSet):
         dinheiro_aplicado = balance.money_applied
         return JsonResponse(
             {
-                "saldo": saldo,
-                "dinheiro_guardado": dinheiro_guardado,
-                "dinheiro_aplicado": dinheiro_aplicado,
+                "saldo": round(saldo,2),
+                "dinheiro_guardado": round(dinheiro_guardado,2),
+                "dinheiro_aplicado": round(dinheiro_aplicado,2),
             }
         )
 
@@ -139,3 +134,26 @@ class AccountViewSet(ModelViewSet):
 
         return Response(data, content_type="application/json")
 
+    @action(methods=["post"], detail=False)
+    def transaction_send(self, request, *args, **kwargs):
+        user_submited = request.user
+        user_target = request.data["target_user"]
+        amount_send = request.data["amount_send"]
+
+        get_target_id = Account.objects.get(email=user_target)
+        balance_submited = Balance.objects.get(cpf=user_submited)
+        balance_target = Balance.objects.get(cpf=get_target_id)
+        print(balance_target.saldo)
+
+        if float(amount_send) > balance_submited.saldo:
+            content_error = {"ERROR": "SALDO INSUFICIENTE"}
+            return Response(content_error, status=status.HTTP_409_CONFLICT)
+        else:
+            balance_submited.saldo = balance_submited.saldo - float(amount_send)
+
+            balance_target.saldo =  float(amount_send) + balance_target.saldo
+            balance_target.save()
+            balance_submited.save()
+
+        content_resposne = {"Ok": "Transaction Success"}
+        return Response(content_resposne, status=status.HTTP_200_OK)

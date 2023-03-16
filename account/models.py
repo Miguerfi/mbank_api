@@ -62,9 +62,9 @@ class Account(AbstractBaseUser, PermissionsMixin):
 
 class Balance(models.Model):
     cpf = models.ForeignKey(Account, null=True, blank=True, on_delete=models.CASCADE)
-    saldo = models.IntegerField(default=0, blank=True, null=True)
-    saved_money = models.IntegerField(default=0, blank=True, null=True)
-    money_applied = models.IntegerField(default=0, blank=True, null=True)
+    saldo = models.FloatField(default=0, blank=True, null=True)
+    saved_money = models.FloatField(default=0, blank=True, null=True)
+    money_applied = models.FloatField(default=0, blank=True, null=True)
 
 
 class Card(models.Model):
