@@ -6,12 +6,23 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from account.api.viewsets.serializers.account_serializer import AccountSerializer
 from account.api.viewsets.serializers.card_serializer import CardSerializer
-from account.models import Account, Balance, Card
+from account.api.viewsets.serializers.transaction_author_serializer import (
+    TransactionAuthorSerializer,
+)
+from account.models import (
+    Account,
+    Balance,
+    Card,
+    TransactionAuthor,
+    TransactionHistory,
+    TransactionTarget,
+)
 from rest_framework.decorators import action
 from rest_framework import status
 import json
 import random
 import datetime
+import string
 
 
 class AccountViewSet(ModelViewSet):
@@ -64,6 +75,13 @@ class AccountViewSet(ModelViewSet):
         obj_token = {"token": token_key}
         return Response(obj_token, status=status.HTTP_201_CREATED)
 
+    def generate_transaction_id(self):
+        characters = string.ascii_letters + string.digits
+
+        transaction_id = "".join(random.choices(characters, k=60))
+
+        return transaction_id
+
     @action(methods=["post"], detail=False)
     def login(self, request, *args, **kwargs):
         cpf = request.data["cpf"]
@@ -83,9 +101,9 @@ class AccountViewSet(ModelViewSet):
         dinheiro_aplicado = balance.money_applied
         return JsonResponse(
             {
-                "saldo": round(saldo,2),
-                "dinheiro_guardado": round(dinheiro_guardado,2),
-                "dinheiro_aplicado": round(dinheiro_aplicado,2),
+                "saldo": round(saldo, 2),
+                "dinheiro_guardado": round(dinheiro_guardado, 2),
+                "dinheiro_aplicado": round(dinheiro_aplicado, 2),
             }
         )
 
@@ -139,21 +157,48 @@ class AccountViewSet(ModelViewSet):
         user_submited = request.user
         user_target = request.data["target_user"]
         amount_send = request.data["amount_send"]
+        generate_transaction = self.generate_transaction_id()
 
         get_target_id = Account.objects.get(email=user_target)
         balance_submited = Balance.objects.get(cpf=user_submited)
         balance_target = Balance.objects.get(cpf=get_target_id)
-        print(balance_target.saldo)
 
         if float(amount_send) > balance_submited.saldo:
-            content_error = {"ERROR": "SALDO INSUFICIENTE"}
+            content_error = {"message": "saldo insuficiente"}
             return Response(content_error, status=status.HTTP_409_CONFLICT)
         else:
             balance_submited.saldo = balance_submited.saldo - float(amount_send)
 
-            balance_target.saldo =  float(amount_send) + balance_target.saldo
+            balance_target.saldo = float(amount_send) + balance_target.saldo
             balance_target.save()
             balance_submited.save()
 
-        content_resposne = {"Ok": "Transaction Success"}
-        return Response(content_resposne, status=status.HTTP_200_OK)
+        transaction = TransactionHistory()
+        transaction.amount = amount_send
+        if request.data["message"] != '':
+            transaction.message = request.data["message"]
+        transaction.transaction_id = generate_transaction
+        transaction.save()
+
+        filter_transactionID = TransactionHistory.objects.filter(
+            transaction_id=generate_transaction
+        ).first()
+        get_author_transaction = Account.objects.get(id=request.user.id)
+
+        transaction_author = TransactionAuthor()
+        transaction_author.transaction_id = filter_transactionID
+        transaction_author.author = get_author_transaction
+        transaction_author.save()
+
+        transaction_target = TransactionTarget()
+        transaction_target.transaction_id = filter_transactionID
+        transaction_target.target = get_target_id
+        transaction_target.save()
+
+        data = {
+            "transaction_amount": transaction.amount,
+            "transaction_message": transaction.message,
+            "transaction_author": request.user.nick,
+            "transaction_id": transaction.transaction_id,
+        }
+        return Response(data, status=status.HTTP_200_OK)

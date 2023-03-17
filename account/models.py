@@ -6,6 +6,7 @@ from django.contrib.auth.models import (
 from django.db import models
 from django.utils import timezone
 
+
 class AccountManager(BaseUserManager):
     def create_user(
         self,
@@ -68,17 +69,33 @@ class Balance(models.Model):
 
 
 class Card(models.Model):
-    GOLD = 'gl'
-    PLATINUM = 'pt'
-    DIAMOND = 'dm'
+    GOLD = "gl"
+    PLATINUM = "pt"
+    DIAMOND = "dm"
 
-    TYPE_CARD_CHOICES = [
-            (GOLD,'Gold'),
-            (PLATINUM,'Platinum'),
-            (DIAMOND,'Diamond')
-            ]
+    TYPE_CARD_CHOICES = [(GOLD, "Gold"), (PLATINUM, "Platinum"), (DIAMOND, "Diamond")]
     card = models.IntegerField(blank=True, null=True)
     cvv = models.IntegerField(null=True, blank=True)
     exp_data = models.DateField(null=True, blank=True)
-    type_card = models.CharField(max_length=2,choices=TYPE_CARD_CHOICES,default=GOLD)
+    type_card = models.CharField(max_length=2, choices=TYPE_CARD_CHOICES, default=GOLD)
     cpf = models.ForeignKey(Account, blank=True, null=True, on_delete=models.CASCADE)
+
+
+class TransactionHistory(models.Model):
+    amount = models.DecimalField(max_digits=8, decimal_places=2)
+    transaction_id = models.CharField(max_length=32, null=True, blank=True)
+    message = models.CharField(max_length=60, null=True, blank=True)
+
+
+class TransactionAuthor(models.Model):
+    author = models.ForeignKey(Account, null=True, blank=True, on_delete=models.CASCADE)
+    transaction_id = models.ForeignKey(
+        TransactionHistory, related_name="author_transaction", on_delete=models.CASCADE
+    )
+
+
+class TransactionTarget(models.Model):
+    target = models.ForeignKey(Account, null=True, blank=True, on_delete=models.CASCADE)
+    transaction_id = models.ForeignKey(
+        TransactionHistory, related_name="target_transaction", on_delete=models.CASCADE
+    )
